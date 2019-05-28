@@ -100,3 +100,56 @@ Si deseamos ver \textbf{paquetes OpenFlow}, debemos poner a escuchar Wireshark  
     \caption{Tráfico OpenFlow.}
   \label{fig:yo}
 \end{figure}
+\newline
+Nota: 
+\begin{itemize}
+    \item Consultar comando dpctl: \url{http://ranosgrant.cocolog-nifty.com/openflow/dpctl.8.html}
+    \item xID: Identificador de transacción, es aleatorio, identificador controlador - switch, va cambiando a lo largo del tiempo.  
+    \item El estándar es OpenFlow 1.3, pero Mininet-Wifi funciona con OpenFlow 1.1
+\end{itemize}
+
+Como esperábamos el paquete ICMP debería ser redirigido al controlador para decidir que hacer con el paquete, al no tener un Flow con una regla establecida. De esta manera el controlador cuando  le llegue el paquete instanciará una serie de reglas en los switch para que el paquete ICMP sea encaminado de un host a otro. En cambio, encontramos que las dos estaciones son capaces de intercambiar paquetes inmediatamente sin redirigir el primer paquete al controlador. Solo una trama ARP , que es de tipo broadcast, es llevada hacia el controlador y es ignorada.\newline
+\newline
+Para comprobar si hubira algún flujo con una ccción instanciada en alguna de las estaciones bases hacemos:
+\textbf{dpctl dump-flows}
+\newline
+\newline
+Al hacer esto en esta altura del tutorial, vemos que no hay ninguna regla instanciada en la estación. ¿Pero, tiene esto sentido?¿Cómo se han comunicado las dos puntos de acceso?\newline
+\newline
+Según la guía, podemos apreciar que los switches con OpenFlow activado, van a rechazar las "Hairpin connections". Las cuales son flows que hacen que el tráfico, sea enviado por el mismo puerto que ha sido recibido.
+
+\begin{itemize}
+    \item \textbf{Hairpin connection}: Comunicación entre dos dispositivos host en el mismo dominio NAT utilizando sus puertos finales(Ya traducidos)
+\end{itemize}
+\newpage
+\begin{figure}[!htb]
+  \centering
+    \includegraphics[width=\linewidth]{./img/8.JPG}
+    \caption{No hay tráfico OpenFlow hacia el controlador.}
+  \label{fig:yo}
+\end{figure}
+Un punto de acceso wireless, por diseño, recibe y manda paquetes en la misma interfaz. Las estaciones wifi conectadas al mismo punto de acceso requerirán a "Hairpin connection" para comunicarse entre ellas. El autor de la guía supone que Linux, maneja a la interfaz WLAN en cada punto de acceso como un enlace radio sta1-ap1-sta2 como si fuera un HUB, donde ap1-wlan0 proporciona la funcionalidad de "HUB"
+para los datos que pasan entre sta1 y sta2.
+ap1-wlan0 cambia los paquetes en el dominio inalámbrico y lo hará
+no introduzca un paquete en la parte del "conmutador Ethernet" del punto de acceso ap1 a menos que deba cambiarse a
+otra interfaz en ap1 que no sea ap1-wlan0.\newline
+\newline
+\begin{itemize}
+    \item Podemos detener el ping con CTRL+C
+    \item Podemos detener Mininet-Wifi vía comando \textbf{exit}
+    \item Podemos limpiar los archivos residuales de Mininet-Wifi con:  \textbf{sudo mn -c}
+\end{itemize}
+
+\section{Test 2}
+En este test vamos a crear una topología lineal con tres puntos de acceso, y tres estaciones wifi. Donde cada una está conectada a cada punto de acceso.\newline
+\newline
+Podemos crear la topología: \textbf{sudo mn --wifi --topo linear,3}
+\newpage
+\begin{figure}[!htb]
+  \centering
+    \includegraphics[width=\linewidth]{./img/9.JPG}
+    \caption{Montar topología lineal en Mininet-Wifi.}
+  \label{fig:yo}
+\end{figure}
+Además,  podemos  verificar la configuración de la topología haciendo uso de los comandos \textbf{net} y \textbf{dump}. Con el comando \textbf{net} podemos ver la conexión entre los nodos. Con el comando \textbf{dump} podemos ver la conexión entre los nodos y además información extra como el PID.
+
