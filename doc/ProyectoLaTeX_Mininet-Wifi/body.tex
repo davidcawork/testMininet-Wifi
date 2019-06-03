@@ -332,7 +332,7 @@ net.addAccessPoint( 'ap1', passwd='123456789a', encrypt='wpa2', ssid=
 Para activar la asociación de control en una red estática se debe usar el método que nos proporciona la api de Python de Mininet-Wifi que automáticamente elige el punto de acceso al cual una estación wifi debe ser conectado(Basado en la distancia entre estaciones Wifi y puntos de acceso). Por ejemplo podemos utilizar este criterio de elección \textbf{ssf} (Strongest signal first) para decidir desde una estación wifi a que punto de acceso debe ser conectada.
 
 \begin{minted}[]{python}
-net.associationControl( 'ssf' )
+net.setAssociationCtrl( 'ssf' )
 \end{minted}
 
 \subsection{Métodos básicos API Mininet }
@@ -362,7 +362,172 @@ Podemos contemplar que con esta combinación de la API anterior de Mininet más 
 \newpage
 \subsection{Ejemplo script Mininet-Wifi}
 \begin{minted}[xleftmargin=5pt,linenos,fontsize=\small]{python}
-# !/usr/bin/python
+#!/usr/bin/python
+
+from mininet.node import Controller
+from mininet.log import setLogLevel, info
+from mn_wifi.node import OVSKernelAP
+from mn_wifi.cli import CLI_wifi
+from mn_wifi.net import Mininet_wifi
+
+
+def topology():
+   
+    net = Mininet_wifi(controller=Controller, accessPoint=OVSKernelAP)
+
+    info("*** Creamos los nodos de la topologia\n")
+    sta1 = net.addStation('sta1', mac='00:00:00:00:00:02', ip='10.0.0.2/8',
+                          range=20, position='10,20,0')
+    sta2 = net.addStation('sta2', mac='00:00:00:00:00:03', ip='10.0.0.3/8',
+                          range=20, position='50,20,0')
+    ap1 = net.addAccessPoint('ap1', ssid='ssid-ap1', mode='g', channel='1',
+                             position='15,30,0', range=30)
+    ap2 = net.addAccessPoint('ap2', ssid='ssid-ap2', mode='g', channel='6',
+                             position='55,30,0', range=30)
+    c1 = net.addController('c1', controller=Controller)
+
+    #Config nodos   
+    info("*** Configuramos los nodos de la topologia\n")
+    net.configureWifiNodes()
+    net.setAssociationCtrl('ssf')
+
+    #Matplotlib dibujo 
+    net.plotGraph(max_x=100, max_y=100)
+
+    #Enlaces 
+    info("*** Creamos los links\n")
+    net.addLink(ap1, ap2)
+    net.addLink(ap1, sta1)
+    net.addLink(ap2, sta2)
+
+    info("*** Arrancar la red\n")
+    net.build()
+    c1.start()
+    ap1.start([c1])
+    ap2.start([c1])
+
+    info("*** MininetWifi CLI ...\n")
+    CLI_wifi(net)
+
+    info("*** Parar la red\n")
+    net.stop()
+
+
+if __name__ == '__main__':
+    setLogLevel('info')
+    topology()
+
+\end{minted}
+En este ejemplo hemos tenido una dificultad, y es el método de la topología que establece el criterio de asociación entre estaciones Wifi y puntos de acceso. En la documentación lo expone según \textbf{associationControl()} y en la API se llama \textbf{setAssociationCtrl()} . 
+\newpage
+Se ha abierto un Issue indicándole a los creadores y a los desarrolladores que mantienen el proyecto si pueden cambiarlo o poner una nota para que la gente que inicia leyendo la documentación no tenga dificultades añadidas. \newline
+\newline
+\begin{center}
+\url{https://github.com/intrig-unicamp/mininet-wifi/issues/226}
+\end{center}
+
+\begin{figure}[!htb]
+  \centering
+    \includegraphics[width=0.9\linewidth]{./img/19.JPG}
+    \caption{Resultado de ejecución del ejemplo.}
+  \label{fig:yo}
+\end{figure}
+El script lo hemos ejecutado desde la terminal haciendo uso del interprete de comandos. Lo hemos invocado según el siguiente comando:
+\begin{itemize}
+    \item sudo python test\_topo\_1.py
+\end{itemize}
+También se podría haber ejecutado directamente siempre y cuando el Path del interprete estuviera bien puesto. Una vez ejecutado el script, tendremos una topología cargada en Mininet-Wifi de dos puntos de acceso y dos estaciones Wifi emparejadas a cada uno de estos puntos de acceso. \newline
+\newline
+Como hemos indicado en el script que queríamos que cargase la CLI de Mininet-Wifi y que dibujara la topología, al completar la ejecución del script entrará en la CLI de Mininet-Wifi y con ayuda de matplotlib graficará la topología.
+Una vez dentro de la CLI de Mininet-Wifi podremos consultar los parámetros tales como la posición de un nodo de la topología. Esto lo podemos hacer haciendo del comando \textbf{py} que incorpora la CLI. Además, por lo que hemos podido ver, la CLI soporta código de python directamente haciendo uso del comando \textbf{py}. Esto será muy util para consultar información o para hacer breves cambios en la red cuando el escenario ya está corriendo.
+\newpage
+\begin{figure}[!htb]
+  \centering
+    \includegraphics[width=0.6\linewidth]{./img/20.JPG}
+    \caption{Consultar parámetros desde la CLI.}
+  \label{fig:yo}
+\end{figure}
+
+\subsection{Cambiando la red durante el tiempo de ejecución}
+
+Mininet-WiFi proporciona funciones de Python que se pueden usar durante el tiempo de ejecución para realizar cambios en el nodo en lo relativo a posiciones y asociaciones. Estas funciones son útiles cuando tenemos una configuración estática y queremos hacer cambios puntuales.\newline
+\newline
+Para cambiar el punto de acceso al que está asociada una estación wifi (siempre que la estación Wifi esté en el rango del punto de acceso a cambiar):
+\begin{minted}[]{python}
+mininet-wifi> py sta1.setAssociation('sta1-wlan0', ap1)
+\end{minted}
+Para mover una estación Wifi o un punto de acceso dado unas coordenadas en el espacio. Formato (X,Y,Z).
+\begin{minted}[]{python}
+mininet-wifi> py sta1.setPosition('40,20,40')
+\end{minted}
+También podemos modificar a tiempo real el rango de un punto de acceso.
+\begin{minted}[]{python}
+mininet-wifi> py sta1.setRange(100)
+\end{minted}
+Las modificaciones que hagamos vía CLI repercutirán directamente en el funcionamiento de la red. Un cambio de posición de asociación puede ser clave en el desempeño en la operativa de funcionamiento de la red.
+\newline
+\newline
+Llegados a este punto, ya habríamos acabado el test 3, por lo que solo nos quedaría salir y limpiar Mininet-Wifi. Como ya se explicó:
+
+\begin{itemize}
+    \item (Desde la CLI de Mininet-Wifi) exit
+    \item  sudo mn -c
+\end{itemize}
+\newpage
+\section{Test 4}
+En este test se va a explorar una de las funcionalidades más importantes de Mininet-Wifi, la movilidad. Mininet-Wifi proporciona nuevos métodos en su API de Python, como \textit{startMobility} y \textit{Mobility}, con lo que podemos especificar una amplia variedad de escenarios de LAN inalámbrica mediante el control
+movimiento de la estación Wifi.
+
+\subsection{Python API y métodos de movilidad}
+La API de Python de Mininet-WiFi agrega nuevos métodos que permiten al usuario crear estaciones que se mueven alrededor en el espacio virtual cuando se ejecuta un escenario de emulación.\newline
+\newline
+Para mover una estación en línea recta, use los métodos \textbf{net.startMobility}, \textbf{net.mobility} y \textbf{net.stopMobility}. Por ejemplo, para mover una estación Wifi de una posición a
+otra durante un período de 60 segundos.
+\begin{minted}[]{python}
+net.startMobility( time=0 )
+net.mobility( sta1, 'start', time=1, position='10,20,0' )
+net.mobility( sta1, 'stop', time=59, position='30,50,0' )
+net.stopMobility( time=60 )
+\end{minted}
+Mininet-WiFi también puede mover estaciones wifi de forma automática según los modelos de movilidad predefinidos. Los modelos de movilidad disponibles son:
+\begin{itemize}
+    \item RandomWalk
+    \item TruncatedLevyWalk
+    \item RandomDirection
+    \item RandomWayPoint
+    \item GaussMarkov
+    \item ReferencePoint
+    \item TimeVariantCommunity
+\end{itemize}
+Por ejemplo, para mover una estación en un área de 60 metros por 60
+metros, con una velocidad mínima de 0.1 metros por segundo y una velocidad máxima de 0.2 metros por segundo.
+\begin{minted}[]{python}
+net.setMobilityModel(time=0, model='RandomDirection', max_x=60, 
+ max_y=60, min_v=0.1, max_v=0.2)
+\end{minted}
+Mininet-WiFi conectará y desconectará automáticamente las estaciones desde y hacia los puntos de acceso en función de la intensidad de señal calculada o el nivel de carga en ese punto de acceso. 
+\newline
+\newline
+Para utilizar un método de control de asociación, necesita agregue el parámetro AC en net.setMobilityModel(). Por ejemplo, para cambiar los puntos de acceso basados en
+los criterios de "menos cargado primero":
+\begin{minted}[]{python}
+net.setMobilityModel(time=0, model='RandomWayPoint', max_x=140,
+  max_y=140, min_v=0.7, max_v=0.9, AC='llf')
+\end{minted}
+
+Por lo que tendríamos dos criterios de asociación a un punto de acceso.
+
+\begin{itemize}
+    \item llf  (Least-Loaded-First)
+    \item ssf  (Strongest-Signal-First)
+\end{itemize}
+\newpage
+\subsection{Ejemplo script movilidad}
+
+\begin{minted}[xleftmargin=5pt,linenos,fontsize=\small]{python}
+#!/usr/bin/python
+
+
 
 from mininet.node import Controller
 from mininet.log import setLogLevel, info
@@ -370,56 +535,151 @@ from mn_wifi.net import Mininet_wifi
 from mn_wifi.node import OVSKernelAP
 from mn_wifi.cli import CLI_wifi
 
-def topology():
-
-    net = Mininet_wifi(controller = Controller, accessPoint=OVSKernelAP)
-
-    info('*** Creando los nodos ***\n')
-    net.addAccessPoint('ap1' , ssid = 'ssid−ap1' , mode= 'g' , channel = '1' ,
-    position = '10,30,0' , range = '20' )
-    
-    net.addAccessPoint('ap2' , ssid = 'ssid−ap2' , mode= 'g' , channel = '6' ,
-    position = '50,30,0' , range = '20' )
-    
-    sta1 = net.addStation('sta1' , mac= '00:00:00:00:00:01' , ip='10.0.0.1/8' ,position = '10,20,0' )
-    sta2 = net.addStation('sta2' , mac= '00:00:00:00:00:02' , ip='10.0.0.2/8' ,position = '50,20,0' )
-    c1 = net.addController('c1',controller=Controller)
 
 
-    info("*** Configurando los nodos Wifi ***\n")
-
-    net.configureWifiNodes()
-
-    net.plotGraph(max_x=60 , max_y = 60 )
-    
-    info("*** Activar la asiciacion de control (AP) *** \n ")
-    #Criterio Strongest signal first para la conectar a un ap 
-    net.associationControl('ssf')
+def topo():
 
 
-    info("*** Creando los enlaces ***\n " )
-    #Sera ethernet este link 
-    net.addLink( ap1 , ap2 )
+	net = Mininet_wifi(controller= Controller, accessPoint = OVSKernelAP)
+	
+	info("*** Creando nodos\n")
+	h1 = net.addHost( 'h1', mac='00:00:00:00:00:01',ip='10.0.0.1/8') 
+	
+	sta1 = net.addStation( 'sta1', mac='00:00:00:00:00:02',ip='10.0.0.2/8', range ='20')
+	
+	ap1 = net.addAccessPoint('ap1', ssid = 'ap1-ssid', mode='g', channel= '1', 
+	position='30,50,0', range='30')
+	
+	ap2 = net.addAccessPoint('ap2', ssid = 'ap2-ssid', mode='g', channel= '1', 
+	position='90,50,0', range='30')
+	
+	ap3 = net.addAccessPoint('ap3', ssid = 'ap3-ssid', mode='g', channel= '1', 
+	position='150,50,0', range='30')
+	
+	c1 = net.addController('c1' , controller = Controller)
 
-    #Wireless link 
-    net.addLink( ap1 , sta1 )
-    net.addLink( ap2 , sta2 )
+	info("*** Configurando nodos\n")
+	net.configureWifiNodes()
 
-    info("*** Arrancar la red ***\n " )
-    net.build()
-    c1.start()
-    ap1.start( [ c1 ] )
-    ap2.start( [ c1 ] )
 
-    info( " *** Entrar en la CLI ***\n " )
-    CLI_wifi( net )
+	info("*** Creando links\n")
+	net.addLink(ap1, h1)
+	net.addLink(ap1, ap2)
+	net.addLink(ap2,ap3)
 
-    info ( " *** Parar la network ***\n")
-    net.stop()
+	info("*** Dibujando Topo con matplotlib\n")
+	net.plotGraph(max_x=200, max_y = 200)
 
-if __name__ == ' __main__ ' :
-    setLogLevel('info')
-    topology()
+	info("*** Configurando Movilidad (sta1)\n")
+	net.startMobility(time = 0, AC='ssf')
+	net.mobility(sta1, 'start', time = 20, position='1,50,0')
+	net.mobility(sta1, 'stop', time = 79, position='159,50,0')
+	net.stopMobility(time=200)
+
+	info("*** Network UP!\n")
+	net.build()
+	c1.start()
+	ap1.start([c1])	
+	ap2.start([c1])	
+	ap3.start([c1])	
+
+
+
+	info("*** Cargamos Mininet-Wifi CLI\n")
+	CLI_wifi(net)
+
+	info("*** Parando network\n")
+	net.stop()
+
+
+if __name__ == '__main__':
+	setLogLevel('info')
+	topo()
+
 \end{minted}
-\newpage
 
+Nos hemos dado cuenta que para que complete su recorrido desde x=1 a x=159 debemos darle más tiempo de movilidad por lo que hemos aumentado el periodo de movilidad hasta 200 segundos, ya que con los 79 segundos apenas llegaba a la mitad del recorrido. \newline
+\newline
+\begin{center}
+    \url{https://github.com/davidcawork/testMininet-Wifi/blob/master/doc/Topologies_img/test_movilidad_1.gif}
+\end{center}
+
+Podemos hacer uso del comando \textbf{py} de la CLI de Mininet-Wifi para obtener información relativa a que punto de acceso estamos en rango, esto es muy útil para ver en que momento la estación Wifi está en un conflicto y debe aplicar el criterio de selección para decidir a que punto de acceso conectarse.
+
+\begin{minted}[]{python}
+mininet-wifi> py sta1.params['apsInRange']
+[<OVSAP ap1: lo:127.0.0.1,ap1-wlan1:None,ap1-eth2:None,ap1-eth3:None pid=28721> ]
+mininet-wifi> py sta1.params['apsInRange']
+[<OVSAP ap2: lo:127.0.0.1,ap2-wlan1:None,ap2-eth2:None,ap2-eth3:None pid=28727> ]
+
+# Handover entre dos células de Ap1 a Ap2 
+
+\end{minted}
+
+\subsection{Prueba con la herramienta Iperf}
+En esta prueba se va a utilizar la topología expuesta en el punto anterior(test\_movilidad\_1.py). La operativa va a ser de generar tráfico TCP  entre una estación Wifi y un host estático con Iperf. Nuestro servidor será la estación wifi dotada de movilidad, que irá recorriendo los tres puntos de acceso ap1, ap2  y ap3. \newline
+\newline
+El objetivo de la prueba es ver en el momento del handover entre dos puntos de acceso, como el tráfico deja de fluctuar entre servidor y cliente. Esto se debe a que las reglas instauradas por el controlador en el ap1 dejan de ser útiles ya que este se encuentra en el dominio del ap2 por lo que el trafico deja de fluctuar. Para resolverlo podemos eliminar las reglas instauradas con \textbf{dpctl del-flows}. Pasos a seguir:
+\begin{itemize}
+    \item sudo python test\_movilidad\_1.py
+    \item xterm sta1
+    \item xterm h1
+    \item (En la consola de sta1) iperf --server
+    \item (En la consola de h1) iperf --client 10.0.0.2 --time 60 --interval 2
+    \item Observar como deja de fluctuar el tráfico tras producirse el handover.
+    \item dpctl del-flows
+    \item Se recupera el tráfico.
+\end{itemize}
+\newpage
+\begin{figure}[!htb]
+  \centering
+    \includegraphics[width=0.8\linewidth]{./img/21.JPG}
+    \caption{Levantamos la topología.}
+  \label{fig:yo}
+\end{figure}
+\begin{figure}[!htb]
+  \centering
+    \includegraphics[width=0.6\linewidth]{./img/22.JPG}
+    \caption{Topología Inicial.}
+  \label{fig:yo}
+\end{figure}
+\newpage
+\begin{figure}[!htb]
+  \centering
+    \includegraphics[width=\linewidth]{./img/23.JPG}
+    \caption{Lanzamos las consolas en Sta1 y h1.}
+  \label{fig:yo}
+\end{figure}
+\begin{figure}[!htb]
+  \centering
+    \includegraphics[width=\linewidth]{./img/24.JPG}
+    \caption{Creamos tráfico entre Sta1 y h1.}
+  \label{fig:yo}
+\end{figure}
+\newpage
+\begin{figure}[!htb]
+  \centering
+    \includegraphics[width=\linewidth]{./img/25.JPG}
+    \caption{Tablas antes del Handover.}
+  \label{fig:yo}
+\end{figure}
+\begin{figure}[!htb]
+  \centering
+    \includegraphics[width=\linewidth]{./img/26.JPG}
+    \caption{Handover realizado el tráfico se detiene.}
+  \label{fig:yo}
+\end{figure}
+\newpage
+\begin{figure}[!htb]
+  \centering
+    \includegraphics[width=\linewidth]{./img/27.JPG}
+    \caption{Borramos las tablas, el tráfico se recupera pasados unos segundos.}
+  \label{fig:yo}
+\end{figure}
+Llegados a este punto, ya habríamos acabado el test 4, por lo que solo nos quedaría salir y limpiar Mininet-Wifi. Como ya se explicó:
+\begin{itemize}
+    \item (Desde la CLI de Mininet-Wifi) exit
+    \item  sudo mn -c
+\end{itemize}
+\newpage
+\section{Test 5}
