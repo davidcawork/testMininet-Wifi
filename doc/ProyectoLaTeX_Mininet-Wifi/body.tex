@@ -7,13 +7,14 @@ Por lo que he leído Mininet-Wifi no incorpora el estándar que usábamos para e
     
 \end{itemize}
 
+\section{Introducción teórica}
 
-\section{¿Qué es?}
+\subsection{¿Qué es?}
 
 
 Mininet-Wifi es un fork del proyecto Mininet con el que podías emular redes SDN, y se han extendido sus funcionalidades al ámbito de las redes wireless. Por lo que con el se pueden combinar ambas funcionalidades, las anteriores comunes a Mininet y las nuevas que incorpora Mininet-Wifi.
 
-\section{¿Qué es el término RSSI?}
+\subsection{¿Qué es el término RSSI?}
 
 El indicador de fuerza de la señal recibida (RSSI por las siglas del inglés Received Signal Strength Indicator), es una escala de referencia \textbf{en relación a 1 mW} para medir el nivel de potencia de las señales recibidas por un dispositivo en las redes inalámbricas (típicamente WIFI o telefonía móvil).
 
@@ -56,10 +57,10 @@ Instalar Mininet-Wifi me ha resultado muy sencillo. Se lleva a cabo vía un shel
     \end{itemize}
     \item De forma adicional hemos instalado Wireshark para poder analizar los test realizados
 \end{itemize}
-
-\section{Test 1}
+\input{CLI_Mininet_Wifi.tex}
+\section{Test 1: Escenario simple, unico punto de acceso}
 La red más sencilla es por defecto la red de un punto de acceso y dos estaciones wireless. El punto de acceso está conectado directamente al controlador, y las estaciones wireless serán los host. La idea de este test es comprobar que hay fluctuación de tráfico de control OpenFlow en el punto de acceso y además hay tráfico de usuario en la interfaz de wlan.
-
+\subsection{Capturando tráfico de control wireless en Mininet-Wifi}
 \begin{itemize}
     \item Lanzamos Wireshark para analizar tráfico: \textbf{wireshark \&}
     \item Lanzamos Mininet-Wifi con el siguiente comando, además por defecto cargará la topología por defecto(Valga la redundancia): \textbf{sudo mn -wifi}
@@ -93,6 +94,7 @@ Como podeos ver el punto de acceso tiene una interfaz asociada llamada ap1-wlan1
   \label{fig:yo}
 \end{figure}
 \newpage
+\subsection{Puntos de acceso Wireless y OpenFlow}
 Si deseamos ver \textbf{paquetes OpenFlow}, debemos poner a escuchar Wireshark  en la interfaz de \textbf{loopback}. Podemos además utilizar el filtro: \textbf{OpenFlow\_1.0} para visualizarlo de una forma más clara. Dicho esto, ponemos a capturar Wireshark y repetimos el ping entre sta1 y sta2.
 \begin{figure}[!htb]
   \centering
@@ -140,7 +142,7 @@ otra interfaz en ap1 que no sea ap1-wlan0.\newline
     \item Podemos limpiar los archivos residuales de Mininet-Wifi con:  \textbf{sudo mn -c}
 \end{itemize}
 
-\section{Test 2}
+\section{Test 2: Multiples puntos de acceso}
 En este test vamos a crear una topología lineal con tres puntos de acceso, y tres estaciones wifi. Donde cada una está conectada a cada punto de acceso.\newline
 \newline
 Podemos crear la topología: \textbf{sudo mn --wifi --topo linear,3}
@@ -182,8 +184,8 @@ En este caso cada estación Wifi está conectad a un punto de acceso según se p
 Nota de la guia: \textit{Los comandos iw pueden usarse en escenarios estáticos como este, pero no deben usarse cuando
 Mininet-WiFi asigna automáticamente asociaciones en escenarios de movilidad más realistas. Discutiremos
 cómo Mininet-WiFi maneja la movilidad real y cómo usar los comandos iw con Mininet-WiFi más adelante
-esta publicación}.\newline
-\newline
+esta publicación}.
+\subsection{Asociaciones con los puntos de acceso}
 En este caso vamos a comprobar como podemos cambiar la conexión existente entre la estación Wifi 1 (sta1) con el punto de acceso 1 (ap1). En este caso vamos a conectar la estación Wifi 1 (sta1) con el punto de acceso 2 (ap2). Debemos recordar los SSID de cada punto de acceso (ssid\_apX).\newline
 \newline
 \begin{center}
@@ -217,7 +219,8 @@ Ahora vamos a estudiar como gestiona el controlador OVSAP de Mininet-Wifi el Han
 \newline
 Vamos hacer ping desde sta3 a sta1 (\textbf{Ip: 10.0.0.1}). Ahora desde que estos paquetes serán reenviados por los puntos de acceso asociados, en un puerto distinto al puerto
 en el que se recibieron los paquetes, los puntos de acceso funcionarán normalmente en cuanto a OpenFlow ser refiere. Cada punto de acceso va a reenviar el primer ping que le llegue en dirección al controlador. El controlador va a instanciar en las tablas de flows de cada punto de acceso las reglas correspondientes para que se pueda instanciar una conexión entre sta1 y sta3. \newline
-\newline
+
+\subsection{Flows OpenFlow en un escenario de Handover}
 Podemos comprobar el intercambio de paquetes OpenFlow escuchando la interfaz de loopback.
 \newpage
 \begin{figure}[!htb]
@@ -268,7 +271,7 @@ Llegados a este punto, ya habríamos acabado el test 2, por lo que solo nos qued
     \item  sudo mn -c
 \end{itemize}
 \newpage
-\section{Test 3}
+\section{Test 3: Python API y scripts}
 
 Mininet proporciona una API de Python para que los usuarios puedan crear secuencias de comandos de Python simples que configurarán 
 topologías personalizadas en Mininet-WiFi. Mininet-WiFi extiende esta API para soportar un entorno inalámbrico a la ya existente API de Mininet para Python.\newline
@@ -681,5 +684,4 @@ Llegados a este punto, ya habríamos acabado el test 4, por lo que solo nos qued
     \item (Desde la CLI de Mininet-Wifi) exit
     \item  sudo mn -c
 \end{itemize}
-\newpage
-\section{Test 5}
+

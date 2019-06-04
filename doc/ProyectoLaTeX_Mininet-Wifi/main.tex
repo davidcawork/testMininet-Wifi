@@ -8,7 +8,11 @@
 \usepackage{booktabs}
 \usepackage{floatrow}
 \usepackage{url}
+\usepackage{appendix}
 \newcommand{\shellcmd}[1]{\\\indent\indent\texttt{\footnotesize\# #1}\\}
+\renewcommand{\appendixname}{Anexos}
+\renewcommand{\appendixtocname}{Anexos}
+\renewcommand{\appendixpagename}{Anexos}
 
 \title{Memoria Mininet-Wifi}
 \author{David Carrascal Acebrón}
@@ -26,4 +30,5 @@
 \maketitle
 \tableofcontents{}
  \input{body.tex}
+ \input{anexos.tex}
 \end{document}
