@@ -1,0 +1,48 @@
+\section{Modelos de Propagación en Mininet-Wifi}
+\subsection{Tipos de modelos}
+Mininet-WiFi implementa los siguientes modelos de propagación:
+\begin{itemize}
+    \item Modelo de pérdidas de propagación de FRIIS
+    \item Modelo de pérdidas de propagación de Distancia (Por defecto)
+    \item Modelo de pérdidas Log-normal path
+    \item Modelo de pérdidas de propagación de la Unión Internacional de Telecomunicaciones (UIT)
+    \item Modelo de pérdidas de propagación de 2 rayos 
+\end{itemize}
+Podemos elegir entre estos modelos de propagación via API de Python de Mininet-Wifi. La topología tiene un método llamado \textit{net.propagationModel()} . Ejemplos:
+
+\begin{minted}[]{python}
+#Ejemplos extraídos del manual
+
+# Friis Propagation Loss Model
+net.setPropagationModel(model="friis", sL)
+
+sL = system loss (int)
+
+# Log-Distance Propagation Loss Model
+net.setPropagationModel(model="logDistance", sL , exp )
+
+sL = system loss (int)
+exp = exponent   (int)
+
+#Log-Normal Shadowing Propagation Loss Model
+net.setPropagationModel(model="logNormalShadowing", sL , exp ,
+, variance )
+
+sL = system loss (int)
+exp = exponent (int)
+variance = gaussian variance (int)
+
+# International Telecommunication Union (ITU) Propagation Loss Model
+net.setPropagationModel(model="ITU", lF , nFloors , pL )
+
+lF = floor penetration loss factor (int)
+nFloors = number of floors (int)
+pL = power loss coefficient (int)
+
+
+# Two-Ray Ground Propagation Loss Model
+# Nota: Este modelo no da benos resultados en la corta distancia.
+net.setPropagationModel(model="twoRayGround")
+
+\end{minted}
+\newpage
