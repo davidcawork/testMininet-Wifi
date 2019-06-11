@@ -13,9 +13,9 @@ def topology():
 
     info("*** Creamos los nodos de la topologia\n")
     sta1 = net.addStation('sta1', mac='00:00:00:00:00:02', ip='10.0.0.2/8',
-                          range=20, position='10,20,0')
+                          range=20, position='10,20,40')
     sta2 = net.addStation('sta2', mac='00:00:00:00:00:03', ip='10.0.0.3/8',
-                          range=20, position='50,20,0')
+                          range=20, position='50,20,20')
     ap1 = net.addAccessPoint('ap1', ssid='ssid-ap1', mode='g', channel='1',
                              position='15,30,0', range=30)
     ap2 = net.addAccessPoint('ap2', ssid='ssid-ap2', mode='g', channel='6',
@@ -28,7 +28,7 @@ def topology():
     net.setAssociationCtrl('ssf')
 
     #Matplotlib dibujo 
-    net.plotGraph(max_x=100, max_y=100)
+    net.plotGraph(max_x=100, max_y=100, max_z = 50)
 
     #Enlaces 
     info("*** Creamos los links\n")
